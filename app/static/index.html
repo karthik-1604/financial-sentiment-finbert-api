@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Financial Sentiment Analysis</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      background: #f0f2f5;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+
+    header h1 {
+      font-size: 1.8rem;
+      color: #1a1a2e;
+      margin-bottom: 6px;
+    }
+
+    header p {
+      color: #666;
+      font-size: 0.95rem;
+    }
+
+    .card {
+      background: white;
+      border-radius: 12px;
+      padding: 28px;
+      width: 100%;
+      max-width: 680px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      margin-bottom: 20px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 110px;
+      border: 1.5px solid #ddd;
+      border-radius: 8px;
+      padding: 12px;
+      font-size: 0.95rem;
+      resize: vertical;
+      outline: none;
+      font-family: inherit;
+      transition: border-color 0.2s;
+    }
+
+    textarea:focus { border-color: #4f46e5; }
+
+    button {
+      margin-top: 14px;
+      width: 100%;
+      padding: 12px;
+      background: #4f46e5;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    button:hover { background: #4338ca; }
+    button:disabled { background: #a5b4fc; cursor: not-allowed; }
+
+    .result-card {
+      display: none;
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      width: 100%;
+      max-width: 680px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+    }
+
+    .sentiment-badge {
+      display: inline-block;
+      padding: 6px 18px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 1rem;
+      margin-bottom: 6px;
+      text-transform: capitalize;
+    }
+
+    .positive  { background: #dcfce7; color: #15803d; }
+    .negative  { background: #fee2e2; color: #b91c1c; }
+    .neutral   { background: #e0e7ff; color: #3730a3; }
+
+    .confidence {
+      color: #555;
+      font-size: 0.9rem;
+      margin-bottom: 20px;
+    }
+
+    .prob-section h4 {
+      font-size: 0.85rem;
+      color: #888;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 12px;
+    }
+
+    .prob-row {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+      gap: 10px;
+    }
+
+    .prob-label {
+      width: 70px;
+      font-size: 0.88rem;
+      color: #444;
+      text-transform: capitalize;
+    }
+
+    .prob-bar-bg {
+      flex: 1;
+      background: #f1f5f9;
+      border-radius: 6px;
+      height: 10px;
+      overflow: hidden;
+    }
+
+    .prob-bar {
+      height: 100%;
+      border-radius: 6px;
+      transition: width 0.5s ease;
+    }
+
+    .bar-positive { background: #22c55e; }
+    .bar-neutral  { background: #6366f1; }
+    .bar-negative { background: #ef4444; }
+
+    .prob-value {
+      width: 42px;
+      font-size: 0.85rem;
+      color: #555;
+      text-align: right;
+    }
+
+    .error-msg {
+      color: #b91c1c;
+      font-size: 0.9rem;
+      margin-top: 10px;
+      display: none;
+    }
+
+    .loader {
+      display: none;
+      text-align: center;
+      color: #888;
+      font-size: 0.9rem;
+      margin-top: 10px;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>Financial Sentiment Analysis</h1>
+    <p>Powered by fine-tuned FinBERT on Financial PhraseBank</p>
+  </header>
+
+  <div class="card">
+    <textarea id="inputText" placeholder="Enter financial text here e.g. The company reported record profits this quarter..."></textarea>
+    <p class="error-msg" id="errorMsg">Something went wrong. Please try again.</p>
+    <p class="loader" id="loader">Analyzing...</p>
+    <button id="analyzeBtn" onclick="analyze()">Analyze Sentiment</button>
+  </div>
+
+  <div class="result-card" id="resultCard">
+    <span class="sentiment-badge" id="sentimentBadge"></span>
+    <p class="confidence" id="confidenceText"></p>
+    <div class="prob-section">
+      <h4>Probability Distribution</h4>
+      <div class="prob-row">
+        <span class="prob-label">Positive</span>
+        <div class="prob-bar-bg"><div class="prob-bar bar-positive" id="barPositive"></div></div>
+        <span class="prob-value" id="valPositive"></span>
+      </div>
+      <div class="prob-row">
+        <span class="prob-label">Neutral</span>
+        <div class="prob-bar-bg"><div class="prob-bar bar-neutral" id="barNeutral"></div></div>
+        <span class="prob-value" id="valNeutral"></span>
+      </div>
+      <div class="prob-row">
+        <span class="prob-label">Negative</span>
+        <div class="prob-bar-bg"><div class="prob-bar bar-negative" id="barNegative"></div></div>
+        <span class="prob-value" id="valNegative"></span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function analyze() {
+      const text = document.getElementById('inputText').value.trim();
+      const btn  = document.getElementById('analyzeBtn');
+      const err  = document.getElementById('errorMsg');
+      const loader = document.getElementById('loader');
+      const resultCard = document.getElementById('resultCard');
+
+      if (!text) return;
+
+      btn.disabled = true;
+      err.style.display = 'none';
+      resultCard.style.display = 'none';
+      loader.style.display = 'block';
+
+      try {
+        const res  = await fetch('/predict', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        });
+
+        if (!res.ok) throw new Error('API error');
+        const data = await res.json();
+
+        const badge = document.getElementById('sentimentBadge');
+        badge.textContent  = data.sentiment;
+        badge.className    = `sentiment-badge ${data.sentiment}`;
+
+        document.getElementById('confidenceText').textContent =
+          `Confidence: ${(data.confidence * 100).toFixed(1)}%`;
+
+        const probs = data.probabilities;
+        setBar('Positive', probs.positive);
+        setBar('Neutral',  probs.neutral);
+        setBar('Negative', probs.negative);
+
+        resultCard.style.display = 'block';
+
+      } catch (e) {
+        err.style.display = 'block';
+      } finally {
+        btn.disabled = false;
+        loader.style.display = 'none';
+      }
+    }
+
+    function setBar(label, value) {
+      const pct = (value * 100).toFixed(1);
+      document.getElementById(`bar${label}`).style.width = `${pct}%`;
+      document.getElementById(`val${label}`).textContent = `${pct}%`;
+    }
+
+    document.getElementById('inputText').addEventListener('keydown', function(e) {
+      if (e.ctrlKey && e.key === 'Enter') analyze();
+    });
+  </script>
+
+</body>
+</html>
