@@ -1,6 +1,15 @@
 # Financial Sentiment Analysis with FinBERT
 
-End-to-end financial sentiment analysis system built on the Financial PhraseBank dataset. Fine-tunes ProsusAI/finbert using custom weighted cross-entropy loss with 5-fold cross-validation, and deploys a production-ready REST API with FastAPI, SQLite prediction logging, and an interactive web interface.
+**Real-time sentiment classification for financial news and market communications.** Analyzes earnings reports, analyst statements, and financial news to determine positive, negative, or neutral market sentiment — critical for algorithmic trading, risk assessment, and portfolio management decisions.
+
+Built by fine-tuning ProsusAI/FinBERT on 4,838 professionally-annotated financial sentences, achieving **88.57% accuracy** with production-grade deployment via FastAPI REST API, SQLite logging, and an interactive web interface.
+
+**Key Features:**
+- Domain-adapted transformer model (FinBERT) optimized for financial language
+- Handles class imbalance with weighted cross-entropy loss
+- Rigorous 5-fold stratified cross-validation for reliable generalization
+- Production API with batch processing, prediction history, and health monitoring
+- Complete test coverage with pytest
 
 ---
 
